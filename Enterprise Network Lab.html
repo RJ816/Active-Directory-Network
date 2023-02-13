@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+
+<title>Enterprise Network Lab</title>
+
+<body class="container-fluid">
+  <div class="row display-4 fw-bolder"><p class="text-center">Oracle Box Virtual Enterprise Network</p></div>
+  <div class="row fw-bold p-0 m-0">Install Needed Software</div>
+
+  <div class="row">
+    <p class="mb-0">Install <a href="https://www.virtualbox.org/" target="new_blank">Oracle Virtual Box</a>.</p>
+    <p class="my-0">Install <a href="https://www.microsoft.com/en-us/evalcenter/download-windows-server-2019" target="new_blank">Windows Server iso</a> for each server VM.</p>
+    <p class="mt-0">Install <a href="https://www.microsoft.com/software-download/windows11" target="new_blank">Windows 11 Pro/Enterprise iso</a> for each client VM.</p>
+  </div>
+  <div class="row p-0 m-0">
+    <p>This lab has 3 servers and 2 clients:</p>
+    <ul>
+      <li>Network Address Translation (NAT)/Domain Controller (DC) server</li>
+      <li>Dynamic Host Configuration Protocol (DHCP) server</li>
+      <li>File server</li>
+      <li>Client1 workstation</li>
+      <li>Client2 workstation</li>
+    </ul>
+  </div>
+
+  <div class="row fw-bold p-0 m-0">Host Network Settings</div>
+  <div class="row">
+    <p>Set network setting in each VM to internal network and name "intranet".</p>
+    <p>DC-NAT server will also include a bridged adapter to provide WAN access to the internal network.</p>
+  </div>
+  <div class="row mb-1"><img src="images/network.png" alt="virtual box network setting"></div>
+  <figure class="row">
+    <img src="images/bridged.png" alt="bridged connection">
+    <figcaption>The wifi network adapter can sometimes cause issues. Uninstall and reinstall the Virtual Box NDIS6 Bridged Networking Driver to troubleshoot.</figcaption>
+  </figure>
+
+  <div class="row fw-bold p-0 m-0">VM Settings</div>
+  <div class="row p-0 m-0">Rename local host name.</div>
+  <div class="row"><img src="images/rename.png" alt="rename pc"></div>
+  <div class="row p-0 m-0">Run ncpa.cpl to access Network Connections under Control Panel.</div> 
+  <div class="row"><img src="images/ncpa.png" alt="ncpa.cpl"></div> 
+  <div class="row p-0 m-0">Set private static IP addresses. DC-NAT will have loopback address since it is the DNS server.</div>
+  <div class="row"><img src="images/private.png" alt="set private IP address"></div>
+
+  <div class="row fw-bold px-0 mx-0 mt-4">Domain Controller Setup</div>
+  <div class="row p-0 m-0">In Server Manager, under the Manage tab, select add Roles and Features Wizard. Select default options through setup, and install Active Directory Domain Services.</div>
+  <div class="row mb-1"><img src="images/wizard.png" alt="add roles and features wizard"></div>
+  <div class="row">
+    <p>When the installation completes, select the flag icon and select "promote this server to domain controller".</p>
+    <p>Add a new forest (domain) with whatever root domain name address needed (ex. homelab.com). Complete default setup options.</p>
+  </div>
+  <div class="row"><img src="images/root.png" alt="setup root domain name"></div> 
+  <div class="row">
+    <p>Once setup restarts the VM, the new username should be domain name/administrator. Log back in.</p>
+    <p>To setup a custom domain adminstrator account, in server manager select Tools->Active Directory Users and Computers, or run dsa.msc.</p>
+    <p>Right click on the domainname->New->Organization Unit.</p>
+    <p>Create a new OU for admins.</p>
+  </div>
+  <div class="row"><img src="images/ou.png" alt="new ou"></div> 
+  <div class="row">
+    <p>Creat a new User account to use as your personal admin account.</p>
+    <p>Right click on the new account and select Properties->Member Of->Add.</p>
+    <p>Add domain admins;enterprise admins;schema admins; to give various privileged access to this admin account.</p>
+  </div>
+  <div class="row"><img src="images/admin.png" alt="setup admin account"></div>
+  
+  <div class="row fw-bold px-0 mx-0 mt-4">DHCP Setup</div>
+  <div class="row">
+    <p>Log in to the DHCP server under the custom admin account. Change the local pc name and add the VM to the domain.</p>
+    <p>Using Roles and Features Wizard, install DHCP server.</p>
+  </div>
+  <div class="row"><img src="images/dhcp.png" alt="setup dhcp"></div>
+  <div class="row ">
+    <p>Complete DHCP server installation by clicking on the flag icon and authorizing the server with the admin account you logged in with.</p>
+    <p>In Server Manager, select Tools->DHCP->right click IPv4->New Scope. For this server scope will be IPv4 address 10.0.0.200-10.0.0.250.</p>
+    <p>Select default options for the rest of scope setup and include the DC server IPv4 address as the default gateway.</p>
+  </div>
+  <div class="row"><img src="images/scope.png" alt="setup scope"></div> 
+  <div class="row">
+    <p>Startup Client1 VM and confirm that the DHCP server automatically assigned a IPv4 address to the client.</p>
+    <p>Change the first client VM name and add to domain just like the servers.</p>
+    <p>Change the remaining VM local names and add them to the domain.</p>
+  </div>
+  <div class="row"><img src="images/domain.png" alt="add domain"></div> 
+  <div class="row p-0 m-0">Create new organization units for client and server VMs seperately. Move the VMs from Computers to their respective OUs.</div>
+
+  <div class="row fw-bold px-0 mx-0 mt-4">File Server Setup</div>
+  <div class="row">
+    <p>Go to the C: drive in the File server and create a new folder called "user files".</p>
+    <p>Right click on the folder, select Properties->Sharing->Advanced Sharing->check Share this Folder->add a $ to the end of the share name.</p>
+    <p>The $ symbol hides the folder by default.</p>
+    <p>Set custom share permission controls as needed. For the home lab, full control was given for ease of access, and NTFS permissions edited later.</p>
+    <p>Add Domain Users to share permissions after editing permission controls.</p>
+  </div>
+  <div class="row"><img src="images/share.png" alt="share folder"></div>
+  <div class="row p-0 m-0">Test the share folder was created properly by logging into a client VM->File Explorer->type path \\File\user files$.</div>
+
+  <div class="row fw-bold px-0 mx-0 mt-4">Create Home Folders</div>
+  <div class="row">
+    <p>On the DC (NAT) server, go to Active Directory Users and Computers, make a new OU named for general users (_PERSONS).</p>
+    <p>Create a new user in the _PERSONS OU (person1).</p>
+    <p>Right click the new user, select Properties->Profile->Set profile path to \\File\user files$\%username%.</p>
+    <p>%username% will automatically fill in the username if the profile is copied for new users.</p>
+    <p>Create a home folder by selecting a drive (S:) and set the path to \\File\user files$\%username%.</p>
+  </div>
+  <div class="row"><img src="images/home.png" alt="home folder"></div>
+  <div class="row p-0 m-0">Confirm the new home folder was created by logging into the user on a client VM, create a test document, then check the file server to see the updated folder.</div>
+
+  <div class="row fw-bold px-0 mx-0 mt-4">Setup WAN/remote access from NAT Server</div>
+  <div class="row">
+    <p>On the DC (NAT) server, use Add Roles and Features Wizard to add Remote Access. Select Routing under Role Services and continue default setup.</p>
+    <p>Go to Routing and Remote Access->right click Configure and Enable Routing Access->NAT->Select the network adapter that connect to WAN (Internet).</p>
+  </div>
+  <div class="row"><img src="images/nat.png" alt="setup nat"></div>
+  <div class="row">
+    <p>Login to a client VM to confirm it has internet access now through the internal switch.</p>
+    <p>Under DC (NAT) server, go to the Systems menu in Control panel->remote settings->Allow</p>
+    <p>Select users that will have remote access (for the home lab I allowed all domain users).</p>
+  </div>
+  <div class="row"><img src="images/remote.png" alt="remote access"></div> 
+  <div class="row p-0 m-0">Test remote access by logging into a client VM->run Remote Desktop Connection->enter DC-NAT->login with a domain user.</div>
+
+  <div class="row fw-bold px-0 mx-0 mt-4">Create a Startup Script</div>
+  <div class="row">
+    <p>Create a startup script by opening notepad (as admin) and save in path \\DC-NAT\NETLOGON.->All File types->startup.vbs.</p>
+    <p>Type Wscript.Echo "Hello world." to use as a test script.</p>
+  </div>
+  <div class="row"><img src="images/script.png" alt="startup script"></div> 
+  <div class="row p-0 m-0">To add the script to a particular user, right click their profile in AD->Properties->Profile->Enter the file name in the startup script textbox.</div>
+
+  <div class="row fw-bold px-0 mx-0 mt-4">Modify a Group Policy</div>
+  <div class="row">
+    <p>In Server Manager, select Tools->Group Policy Management->right click the domain->Create a GPO in this Domain, and link it here.</p>
+    <p>Name the new GPO as _ALLOW_REMOTE_DESKTOP->right click the new GPO->Edit...</p>
+    <p>Select Computer Configuration->Policies-Administrative Templates-Windows Components->Remote Desktop Services->Remote Desktop Session Host->Connections->Allow users to connect remotely by using Remote Desktop Services->Enable.</p>
+  </div>
+  <div class="row"><img src="images/gpo.png" alt="setup gpo"></div>
+  <div class="row">
+    <p>To test the new GPO, go to command prompt on the VM used and type gpupdate to force the new policy onto the VM.</p>
+    <p>The command <em>gpresult /r</em> can be used to list Resultant Set of Policy (RSOP) to see if the new GPO applied.</p>
+  </div>
+</body>
+
+</html>
+
+    
